@@ -1,6 +1,7 @@
 // src/pages/Landing.jsx
 import heroBg from "../assets/hero-bg.jpeg";
 import logo from "../assets/logo.jpeg";
+import alumnetLogo from "../assets/alumnet-logo.png";
 
 export default function Landing({ onGoLogin, onGoRegister }) {
   return (
@@ -33,7 +34,7 @@ export default function Landing({ onGoLogin, onGoRegister }) {
               objectFit: "cover",
             }}
           />
-          <div style={{ color: "white", fontWeight: 500 }}>
+          <div style={{ color: "white", fontWeight: 600 }}>
             by CodeX
           </div>
         </div>
@@ -59,31 +60,28 @@ export default function Landing({ onGoLogin, onGoRegister }) {
           color: "white",
         }}
       >
-        <div
-          className="fade-up"
-          style={{
-            display: "inline-block",
-            padding: "10px 18px",
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.25)",
-            background: "rgba(255,255,255,0.08)",
-            fontSize: 14,
-            marginBottom: 28,
-          }}
-        >
-          Department of Computer Engineering
+        <div className="fade-up" style={{ marginBottom: 2 }}>
+          <img
+            src={alumnetLogo}
+            alt="AlumNet"
+            style={{
+              width: 400,
+              objectFit: "contain",
+            }}
+          />
         </div>
 
         <h1
           className="fade-up delay-1"
           style={{
-            fontSize: 72,
+            fontSize: 64,
             lineHeight: 1.0,
             margin: "0 0 22px",
             fontWeight: 700,
+            letterSpacing: "0 px",
           }}
         >
-          Alumni Mentorship <br /> Programme
+          Student-Alumni Mentorship <br /> Programme
         </h1>
 
         <p
@@ -94,6 +92,7 @@ export default function Landing({ onGoLogin, onGoRegister }) {
             fontSize: 18,
             lineHeight: 1.6,
             opacity: 0.9,
+            letterSpacing: "0.3px",
           }}
         >
           Bringing students together with alumni and professionals to provide career
@@ -123,6 +122,7 @@ const topLinkBtn = {
   fontSize: 14,
   cursor: "pointer",
   opacity: 0.9,
+  letterSpacing: "0.3px",
 };
 
 const topPillBtn = {
@@ -133,6 +133,7 @@ const topPillBtn = {
   borderRadius: 999,
   fontWeight: 400,
   cursor: "pointer",
+  letterSpacing: "0.3px",
 };
 
 const primaryBtn = {
@@ -141,8 +142,9 @@ const primaryBtn = {
   color: "#0b2a6f",
   padding: "12px 22px",
   borderRadius: 10,
-  fontWeight: 500,
+  fontWeight: 600,
   fontSize: "16px",
+  letterSpacing: "0.3px",
   cursor: "pointer",
   minWidth: 140,
 };
@@ -153,8 +155,9 @@ const outlineBtn = {
   color: "white",
   padding: "12px 22px",
   borderRadius: 10,
-  fontWeight: 500,
+  fontWeight: 600,
   fontSize: "16px",
+  letterSpacing: "0.3px",
   cursor: "pointer",
   minWidth: 120,
 };
