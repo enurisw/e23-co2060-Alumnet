@@ -1,11 +1,8 @@
 require("dotenv").config();
 const { Pool } = require("pg");
 
-const { Pool } = require("pg");
-
 const isProd = process.env.NODE_ENV === "production";
 
-// Prefer DATABASE_URL (Render / production). Fall back to local env vars.
 const pool = process.env.DATABASE_URL
   ? new Pool({
       connectionString: process.env.DATABASE_URL,
