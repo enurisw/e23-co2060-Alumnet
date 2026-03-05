@@ -6,11 +6,12 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import AdminDashboard from "./pages/AdminDashboard";
 import AlumniDirectory from "./pages/AlumniDirectory";
+import Announcements from "./pages/Announcements"; 
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 
-// Optional: an app layout that shows Navbar only on internal pages
+// An app layout that shows Navbar only on internal pages
 import Navbar from "./components/Navbar";
 
 function AppLayout({ children }) {
@@ -33,7 +34,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected: Profile */}
+        {/* Protected the Profile */}
         <Route
           path="/profile"
           element={
@@ -45,13 +46,25 @@ export default function App() {
           }
         />
 
-        {/* Protected: Alumni Directory */}
+        {/* Protected the Alumni Directory */}
         <Route
           path="/directory"
           element={
             <ProtectedRoute>
               <AppLayout>
                 <AlumniDirectory />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected the Announcements */}
+        <Route
+          path="/announcements"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <Announcements />
               </AppLayout>
             </ProtectedRoute>
           }

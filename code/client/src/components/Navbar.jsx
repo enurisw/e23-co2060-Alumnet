@@ -35,6 +35,14 @@ const Navbar = () => {
               Directory
             </NavLink>
 
+            {/* Added the Announcement part*/}
+            <NavLink
+              to="/announcements"
+              className={({ isActive }) => `link ${isActive ? "active" : ""}`}
+            >
+              Announcements
+            </NavLink>
+
             <NavLink
               to="/profile"
               className={({ isActive }) => `link ${isActive ? "active" : ""}`}
