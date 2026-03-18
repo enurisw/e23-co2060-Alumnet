@@ -1,151 +1,116 @@
-// src/pages/AdminDashboard.jsx
-import { useEffect,useState } from "react";
+import { useEffect, useState } from "react";
 import PageShell from "../components/PageShell";
-import { Link,useNavigate } from "react-router-dom";
-import { theme } from "../styles/ui";
+import { getPendingUsers, verifyUser } from "../api";
 
-export default function AdminDashboard(){
-
-const navigate = useNavigate();
-
-const [pending,setPending] = useState([]);
-const [loading,setLoading] = useState(true);
-const [err,setErr] = useState("");
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-const loadUsers = async()=>{
- try{
-  const token = localStorage.getItem("token");
-  if(!token) return navigate("/login");
-
-  const res = await fetch(`${API_URL}/api/auth/admin/pending`,{
-   headers:{Authorization:`Bearer ${token}`}
-  });
-
-  const data = await res.json();
-  if(!res.ok) throw new Error(data.message);
-
-  setPending(data.users||data);
-
- }catch(e){
-  setErr(e.message);
- }finally{
-  setLoading(false);
- }
-};
-
-const verifyUser = async(id)=>{
- try{
-
+export default function AdminDashboard() {
   const token = localStorage.getItem("token");
 
-  await fetch(`${API_URL}/api/auth/admin/verify/${id}`,{
-   method:"PATCH",
-   headers:{Authorization:`Bearer ${token}`}
-  });
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
-  loadUsers();
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setErr("");
+      const data = await getPendingUsers(token);
+      setUsers(data);
+    } catch (e) {
+      setErr(e.message || "Failed to load pending users");
+    } finally {
+      setLoading(false);
+    }
+  };
 
- }catch(e){
-  setErr(e.message);
- }
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const handleVerify = async (id) => {
+    try {
+      setErr("");
+      await verifyUser(token, id);
+      loadUsers();
+    } catch (e) {
+      setErr(e.message || "Failed to verify account");
+    }
+  };
+
+  return (
+    <PageShell title="Admin Dashboard" subtitle="Verify new accounts">
+      {err && <div style={errorBox}>{err}</div>}
+
+      {loading ? (
+        <div>Loading...</div>
+      ) : users.length === 0 ? (
+        <div>No pending users.</div>
+      ) : (
+        <div style={grid}>
+          {users.map((u) => (
+            <div key={u.id} style={card}>
+              <h3 style={name}>{u.full_name}</h3>
+
+              <div style={meta}>{u.email}</div>
+              <div style={meta}>Role: {u.role}</div>
+
+              <button
+                style={verifyBtn}
+                onClick={() => handleVerify(u.id)}
+              >
+                Verify Account
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </PageShell>
+  );
+}
+
+const grid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))",
+  gap: 20,
 };
 
-useEffect(()=>{
- loadUsers();
-},[]);
+const card = {
+  padding: 20,
+  borderRadius: 16,
+  background: "rgba(255,255,255,0.7)",
+  border: "1px solid rgba(0,0,0,0.06)",
+  backdropFilter: "blur(6px)",
+};
 
-return(
+const name = {
+  margin: 0,
+  fontSize: 15,
+  fontWeight: 500,
+  color: "#111111",
+};
 
-<PageShell
-title="User Verification"
-subtitle="Approve alumni and student accounts"
-right={
- <Link to="/profile" style={backBtn}>
-  Back to Profile
- </Link>
-}
->
+const meta = {
+  marginTop: 6,
+  fontSize: 14,
+  color: "rgba(17,17,17,0.72)",
+  wordBreak: "break-word",
+};
 
-{err && <div style={error}>{err}</div>}
+const verifyBtn = {
+  marginTop: 14,
+  padding: "10px 16px",
+  borderRadius: 999,
+  border: "1px solid rgba(0,0,0,0.08)",
+  background: "rgba(255, 255, 255, 0.76)",
+  color: "#111111",
+  cursor: "pointer",
+  fontSize: 14,
+  fontWeight: 400,
+  fontFamily: '"Google Sans", Arial, sans-serif',
+};
 
-{loading ? (
- <div>Loading...</div>
-) : pending.length===0 ? (
- <div>No pending users 🎉</div>
-) : (
-
-<div style={list}>
-
-{pending.map((u)=>(
-<div key={u.user_id||u.id} style={card}>
-
-<div>
-<div style={name}>{u.full_name}</div>
-<div>{u.email}</div>
-<div style={{fontSize:13}}>Role: {u.role}</div>
-</div>
-
-<button
-style={verifyBtn}
-onClick={()=>verifyUser(u.user_id||u.id)}
->
-Verify User
-</button>
-
-</div>
-))}
-
-</div>
-
-)}
-
-</PageShell>
-
-);
-}
-
-const list={
- display:"grid",
- gap:12
-}
-
-const card={
- background:"white",
- padding:16,
- borderRadius:12,
- border:"1px solid rgba(11,42,111,0.12)",
- display:"flex",
- justifyContent:"space-between",
- alignItems:"center"
-}
-
-const name={
- fontWeight:700,
- color:theme.blue
-}
-
-const verifyBtn={
- background:theme.blue,
- color:"white",
- border:"none",
- padding:"10px 14px",
- borderRadius:8,
- cursor:"pointer"
-}
-
-const backBtn={
- background:theme.blue,
- color:"white",
- padding:"10px 14px",
- borderRadius:8,
- textDecoration:"none"
-}
-
-const error={
- background:"#fee2e2",
- padding:10,
- borderRadius:8,
- marginBottom:10
-}
+const errorBox = {
+  background: "#fee2e2",
+  padding: 12,
+  borderRadius: 12,
+  marginBottom: 14,
+};
