@@ -1,16 +1,17 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginUser } from "../api";
 import AuthLayout from "../components/AuthLayout";
 import {
   titleStyle,
+  subtitleStyle,
   labelStyle,
   inputStyle,
   btnPrimaryStyle,
   footerRowStyle,
   linkStyle,
   errorBoxStyle,
+  uiCss,
 } from "../styles/ui";
 
 export default function Login() {
@@ -18,7 +19,6 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -39,33 +39,40 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout maxWidth={420}>
+    <AuthLayout maxWidth={520}>
+      <style>{uiCss}</style>
+
       <h1 style={titleStyle}>Login</h1>
+      <p style={subtitleStyle}>Welcome back to Alumnet.</p>
 
       <form onSubmit={handleSubmit}>
-        <label style={labelStyle}>Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="james.potter@example.com"
-          required
-          autoComplete="email"
-          style={inputStyle}
-        />
+        <div>
+          <label style={labelStyle}>Email Address</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="james.potter@example.com"
+            required
+            style={inputStyle}
+          />
+        </div>
 
-        <label style={labelStyle}>Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••••"
-          required
-          autoComplete="current-password"
-          style={inputStyle}
-        />
+        <div style={{ marginTop: 2 }}>
+          <label style={labelStyle}>Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••••••"
+            required
+            style={inputStyle}
+          />
+        </div>
 
-        {error && <div style={errorBoxStyle}>{error}</div>}
+        {error && (
+          <div style={{ ...errorBoxStyle, marginTop: 10 }}>{error}</div>
+        )}
 
         <button
           type="submit"
@@ -73,7 +80,8 @@ export default function Login() {
           className="btnPrimary"
           style={{
             ...btnPrimaryStyle,
-            opacity: loading ? 0.8 : 1,
+            marginTop: 16,
+            opacity: loading ? 0.75 : 1,
             cursor: loading ? "not-allowed" : "pointer",
           }}
         >
@@ -82,13 +90,13 @@ export default function Login() {
       </form>
 
       <div style={footerRowStyle}>
-        Don’t have an account?{" "}
+        Don&apos;t have an account?{" "}
         <Link className="link" style={linkStyle} to="/register">
           Register
         </Link>
       </div>
 
-      <div style={{ textAlign: "center", marginTop: 10 }}>
+      <div style={{ textAlign: "center", marginTop: 12 }}>
         <Link className="link" style={linkStyle} to="/">
           ← Back to Home
         </Link>

@@ -1,169 +1,341 @@
-// src/pages/Profile.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageShell from "../components/PageShell";
 import { getProfile } from "../api";
 import { jwtDecode } from "jwt-decode";
-import { badge, theme } from "../styles/ui";
 
-export default function Profile(){
+import verifiedIcon from "../assets/verified.png";
+import pendingIcon from "../assets/pending.png";
+import rejectedIcon from "../assets/rejected.png";
 
-const navigate = useNavigate();
-const [profile,setProfile] = useState(null);
-const [loading,setLoading] = useState(true);
-const [err,setErr] = useState("");
+export default function Profile() {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
-const token = useMemo(()=>localStorage.getItem("token"),[]);
+  const token = useMemo(() => localStorage.getItem("token"), []);
 
-const isAdmin = useMemo(()=>{
- try{
-  if(!token) return false;
-  const decoded = jwtDecode(token);
-  return decoded?.role==="admin";
- }catch{return false}
-},[token]);
+  const isAdmin = useMemo(() => {
+    try {
+      if (!token) return false;
+      const decoded = jwtDecode(token);
+      return (
+        decoded?.role === "system_admin" ||
+        decoded?.role === "university_admin"
+      );
+    } catch {
+      return false;
+    }
+  }, [token]);
 
-useEffect(()=>{
- const run = async()=>{
-  try{
-   const t = localStorage.getItem("token");
-   if(!t) return navigate("/login");
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const t = localStorage.getItem("token");
+        if (!t) {
+          navigate("/login");
+          return;
+        }
 
-   const data = await getProfile(t);
-   setProfile(data);
-  }catch(e){
-   setErr(e.message);
-  }finally{
-   setLoading(false);
+        const data = await getProfile(t);
+        setProfile(data);
+      } catch (e) {
+        setErr(e.message || "Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    run();
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <PageShell title="My Account" subtitle="Profile">
+        <div>Loading...</div>
+      </PageShell>
+    );
   }
- };
- run();
-},[navigate]);
 
-const status = profile?.verification_status==="verified" ? "verified":"pending";
+  if (err) {
+    return (
+      <PageShell title="My Account" subtitle="Profile">
+        <div style={errorBox}>{err}</div>
+      </PageShell>
+    );
+  }
 
-return(
+  if (!profile) {
+    return (
+      <PageShell title="My Account" subtitle="Profile">
+        <div>No profile found.</div>
+      </PageShell>
+    );
+  }
 
-<PageShell
-title="My Profile"
-subtitle="Your registration information"
-right={
- isAdmin && (
-   <Link to="/admin" style={adminBtn}>
-     User Verification
-   </Link>
- )
+  const statusIcon =
+    profile.verification_status === "verified"
+      ? verifiedIcon
+      : profile.verification_status === "rejected"
+      ? rejectedIcon
+      : pendingIcon;
+
+  const isStudent = profile.role === "student";
+  const isAlumni = profile.role === "alumni";
+
+  return (
+    <PageShell
+      title="My Account"
+      subtitle="Profile"
+      right={
+        isAdmin ? (
+          <Link to="/admin" style={adminBtn}>
+            User Verification
+          </Link>
+        ) : null
+      }
+    >
+      <div style={pageWrap}>
+        <div style={topArea}>
+          {profile.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt="avatar"
+              style={avatar}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
+          ) : (
+            <div style={avatarFallback}>
+              {profile.full_name?.slice(0, 1)?.toUpperCase() || "U"}
+            </div>
+          )}
+
+          <div style={nameWrap}>
+            <div style={nameRow}>
+              <h2 style={nameStyle}>{profile.full_name}</h2>
+              <img src={statusIcon} alt={profile.verification_status} style={statusIconStyle} />
+            </div>
+
+            <div style={emailStyle}>{profile.email}</div>
+          </div>
+        </div>
+
+        <div style={detailsGrid}>
+          <section>
+            <h3 style={sectionTitle}>Personal Details</h3>
+            <div style={rowsWrap}>
+              {isStudent && (
+                <>
+                  <InfoRow label="Department" value={profile.department} />
+                  <InfoRow label="Batch" value={profile.batch} />
+                  <InfoRow label="Bio" value={profile.bio} multiline />
+                  <InfoRow label="Motivation" value={profile.motivation} multiline />
+                  <InfoRow label="Goal" value={profile.goal} multiline />
+                </>
+              )}
+
+              {isAlumni && (
+                <>
+                  <InfoRow label="Department" value={profile.department} />
+                  <InfoRow label="Graduation Year" value={profile.graduation_year} />
+                  <InfoRow label="Bio" value={profile.bio} multiline />
+                  <InfoRow
+                    label="Mentee Capacity"
+                    value={profile.preferred_mentee_capacity}
+                  />
+                </>
+              )}
+            </div>
+          </section>
+
+          <section>
+            <h3 style={sectionTitle}>Professional Details</h3>
+            <div style={rowsWrap}>
+              {isStudent && (
+                <>
+                  <InfoRow label="Areas of Interest" value={profile.areas_of_interest} multiline />
+                  <InfoRow label="LinkedIn" value={profile.linkedin_url} isLink />
+                  <InfoRow label="GitHub" value={profile.github_url} isLink />
+                  <InfoRow label="Portfolio" value={profile.portfolio_url} isLink />
+                  <InfoRow label="CV" value={profile.cv_url} isLink />
+                </>
+              )}
+
+              {isAlumni && (
+                <>
+                  <InfoRow label="Job Title" value={profile.job_title} />
+                  <InfoRow label="Company" value={profile.organization} />
+                  <InfoRow
+                    label="Expertise / Interests"
+                    value={profile.primary_interests}
+                    multiline
+                  />
+                  <InfoRow label="LinkedIn URL" value={profile.linkedin_url} isLink />
+                </>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    </PageShell>
+  );
 }
->
 
-{err && <div style={error}>{err}</div>}
-
-{loading ? (
- <div>Loading...</div>
-) : (
- <div style={card}>
-
-  <div style={{textAlign:"center",marginBottom:18}}>
-    <span style={badge(status)}>
-      {status==="verified"?"Verified":"Pending"}
-    </span>
-  </div>
-
-  <div style={grid}>
-
-    <Info label="Name" value={profile.full_name}/>
-    <Info label="Email" value={profile.email}/>
-    <Info
-      label="Role"
-      value={profile.role === "alumni" ? "Mentor (Alumni)" : "Mentee (Student)"}
-    />
-
-    {profile.role === "student" && (
-      <>
-        <Info label="Batch" value={profile.batch}/>
-        <Info label="Interests" value={profile.interests}/>
-        <Info label="About Yourself" value={profile.about_yourself}/>
-        <Info label="Why Need Mentor" value={profile.why_need_mentor}/>
-        <Info label="Goals" value={profile.goals}/>
-        <Info label="LinkedIn" value={profile.linkedin_url}/>
-        <Info label="GitHub" value={profile.github_url}/>
-        <Info label="Portfolio" value={profile.portfolio_url}/>
-        <Info label="CV" value={profile.cv_url}/>
-      </>
-    )}
-
-    {profile.role === "alumni" && (
-      <>
-        <Info label="Job Title" value={profile.job_title}/>
-        <Info label="Company" value={profile.company}/>
-        <Info label="Graduation Year" value={profile.grad_year}/>
-        <Info label="LinkedIn" value={profile.linkedin_url}/>
-        <Info label="Expertise / Interests" value={profile.interests}/>
-        <Info label="Preferred Mentee Capacity" value={profile.prefCapacity}/>
-      </>
-    )}
-
-  </div>
-
- </div>
-)}
-
-</PageShell>
-
-);
+function InfoRow({ label, value, isLink = false, multiline = false }) {
+  return (
+    <div style={row}>
+      <div style={rowLabel}>{label}</div>
+      <div
+        style={{
+          ...rowValue,
+          whiteSpace: multiline ? "pre-wrap" : "normal",
+        }}
+      >
+        {value ? (
+          isLink ? (
+            <a
+              href={value}
+              target="_blank"
+              rel="noreferrer"
+              style={linkValue}
+            >
+              {value}
+            </a>
+          ) : (
+            value
+          )
+        ) : (
+          "-"
+        )}
+      </div>
+    </div>
+  );
 }
 
-function Info({label,value}){
-return(
-<div style={info}>
-<div style={labelStyle}>{label}</div>
-<div style={valueStyle}>{value||"-"}</div>
-</div>
-)
-}
+const pageWrap = {
+  paddingTop: 10,
+};
 
-const card={
- background:"white",
- padding:24,
- borderRadius:14,
- border:"1px solid rgba(11,42,111,0.12)"
-}
+const topArea = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  marginBottom: 34,
+};
 
-const grid={
- display:"grid",
- gridTemplateColumns:"repeat(2,1fr)",
- gap:14
-}
+const avatar = {
+  width: 100,
+  height: 100,
+  borderRadius: "50%",
+  objectFit: "cover",
+  border: "1px solid rgba(0,0,0,0.06)",
+  marginBottom: 14,
+};
 
-const info={
- background:"#f9fafc",
- padding:14,
- borderRadius:10,
- border:"1px solid rgba(11,42,111,0.08)"
-}
+const avatarFallback = {
+  width: 74,
+  height: 74,
+  borderRadius: "50%",
+  display: "grid",
+  placeItems: "center",
+  background: "#ecebe7",
+  color: "#111111",
+  fontSize: 26,
+  fontWeight: 400,
+  marginBottom: 14,
+};
 
-const labelStyle={
- fontSize:12,
- textTransform:"uppercase",
- opacity:.7
-}
+const nameWrap = {
+  textAlign: "center",
+};
 
-const valueStyle={
- fontWeight:600,
- color:theme.blue
-}
+const nameRow = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+};
 
-const adminBtn={
- background:theme.blue,
- color:"white",
- padding:"10px 16px",
- borderRadius:8,
- textDecoration:"none",
- fontWeight:600
-}
+const nameStyle = {
+  margin: 0,
+  fontSize: 22,
+  lineHeight: 1.1,
+  letterSpacing: "-0.03em",
+  fontWeight: 400,
+  color: "#111111",
+};
 
-const error={
- background:"#fee2e2",
- padding:10,
- borderRadius:8
-}
+const statusIconStyle = {
+  width: 16,
+  height: 16,
+  objectFit: "contain",
+};
+
+const emailStyle = {
+  marginTop: 6,
+  color: "rgba(17,17,17,0.56)",
+  fontSize: 13,
+};
+
+const detailsGrid = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 26,
+};
+
+const sectionTitle = {
+  margin: "0 0 14px",
+  fontSize: 15,
+  fontWeight: 400,
+  color: "#111111",
+};
+
+const rowsWrap = {
+  display: "grid",
+};
+
+const row = {
+  display: "grid",
+  gridTemplateColumns: "180px 1fr",
+  gap: 16,
+  padding: "10px 0",
+  borderBottom: "1px solid rgba(0,0,0,0.05)",
+};
+
+const rowLabel = {
+  fontSize: 13,
+  color: "rgba(17,17,17,0.54)",
+};
+
+const rowValue = {
+  fontSize: 14,
+  color: "#111111",
+  lineHeight: 1.7,
+  wordBreak: "break-word",
+};
+
+const linkValue = {
+  color: "#2527be",
+  textDecoration: "none",
+  borderBottom: "1px solid rgba(17,17,17,0.14)",
+};
+
+const adminBtn = {
+  background: "rgba(255,255,255,0.7)",
+  color: "#111111",
+  padding: "10px 16px",
+  borderRadius: 999,
+  textDecoration: "none",
+  fontWeight: 400,
+  border: "1px solid rgba(0,0,0,0.06)",
+};
+
+const errorBox = {
+  background: "#fee2e2",
+  padding: 12,
+  borderRadius: 14,
+};

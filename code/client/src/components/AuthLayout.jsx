@@ -1,6 +1,4 @@
-// src/components/AuthLayout.jsx
 import { useEffect, useState } from "react";
-import heroBg from "../assets/hero-bg.jpeg";
 import { pageWrapStyle, cardStyle, uiCss } from "../styles/ui";
 
 export default function AuthLayout({ children, maxWidth = 460 }) {
@@ -12,7 +10,7 @@ export default function AuthLayout({ children, maxWidth = 460 }) {
   }, []);
 
   return (
-    <div style={pageWrapStyle(heroBg)}>
+    <div style={pageWrapStyle()}>
       <style>{uiCss}</style>
 
       <div
