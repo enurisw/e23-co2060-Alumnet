@@ -1,58 +1,55 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import PageShell from "../components/PageShell";
-import { getProfile } from "../api";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import PageShell from "../components/PageShell";
+import { getAlumniProfile } from "../api";
 
 import verifiedIcon from "../assets/verified.png";
 import pendingIcon from "../assets/pending.png";
 import rejectedIcon from "../assets/rejected.png";
 
-export default function Profile() {
+export default function AlumniPublicProfile() {
+  const { id } = useParams();
   const navigate = useNavigate();
+
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  const token = useMemo(() => localStorage.getItem("token"), []);
+  const token = localStorage.getItem("token");
 
-  const isAdmin = useMemo(() => {
+  const currentUser = useMemo(() => {
     try {
-      if (!token) return false;
-      const decoded = jwtDecode(token);
-      return (
-        decoded?.role === "system_admin" ||
-        decoded?.role === "university_admin"
-      );
+      if (!token) return null;
+      return jwtDecode(token);
     } catch {
-      return false;
+      return null;
     }
   }, [token]);
+
+  const isStudent = currentUser?.role === "student";
+  const isOwnProfile = Number(currentUser?.id) === Number(id);
 
   useEffect(() => {
     const run = async () => {
       try {
-        const t = localStorage.getItem("token");
-        if (!t) {
-          navigate("/login");
-          return;
-        }
-
-        const data = await getProfile(t);
+        setLoading(true);
+        setErr("");
+        const data = await getAlumniProfile(id);
         setProfile(data);
       } catch (e) {
-        setErr(e.message || "Failed to load profile");
+        setErr(e.message || "Failed to load alumni profile");
       } finally {
         setLoading(false);
       }
     };
 
     run();
-  }, [navigate]);
+  }, [id]);
 
   if (loading) {
     return (
-      <PageShell title="My Account" subtitle="Profile">
+      <PageShell title="Alumni Profile" subtitle="Public mentor profile">
         <div>Loading...</div>
       </PageShell>
     );
@@ -60,7 +57,7 @@ export default function Profile() {
 
   if (err) {
     return (
-      <PageShell title="My Account" subtitle="Profile">
+      <PageShell title="Alumni Profile" subtitle="Public mentor profile">
         <div style={errorBox}>{err}</div>
       </PageShell>
     );
@@ -68,8 +65,8 @@ export default function Profile() {
 
   if (!profile) {
     return (
-      <PageShell title="My Account" subtitle="Profile">
-        <div>No profile found.</div>
+      <PageShell title="Alumni Profile" subtitle="Public mentor profile">
+        <div>No alumni profile found.</div>
       </PageShell>
     );
   }
@@ -81,19 +78,33 @@ export default function Profile() {
       ? rejectedIcon
       : pendingIcon;
 
-  const isStudent = profile.role === "student";
-  const isAlumni = profile.role === "alumni";
+  const acceptedCount = Number(profile.accepted_mentees_count || 0);
+  const capacity = Number(profile.preferred_mentee_capacity || 0);
+  const remainingSlots = Math.max(capacity - acceptedCount, 0);
+
+  const isVerified = profile.verification_status === "verified";
+  const canRequest =
+    token &&
+    isStudent &&
+    !isOwnProfile &&
+    isVerified &&
+    remainingSlots > 0;
 
   return (
     <PageShell
-      title="My Account"
-      subtitle="Profile"
+      title="Alumni Profile"
+      subtitle="Public mentor profile"
       right={
-        isAdmin ? (
-          <Link to="/admin" style={adminBtn}>
-            User Verification
-          </Link>
-        ) : null
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {canRequest && (
+            <button
+              style={requestBtn}
+              onClick={() => navigate(`/request-mentorship/${id}`)}
+            >
+              Request Mentorship
+            </button>
+          )}
+        </div>
       }
     >
       <div style={pageWrap}>
@@ -116,68 +127,68 @@ export default function Profile() {
           <div style={nameWrap}>
             <div style={nameRow}>
               <h2 style={nameStyle}>{profile.full_name}</h2>
-              <img src={statusIcon} alt={profile.verification_status} style={statusIconStyle} />
+              <img
+                src={statusIcon}
+                alt={profile.verification_status}
+                style={statusIconStyle}
+              />
             </div>
 
             <div style={emailStyle}>{profile.email}</div>
           </div>
         </div>
 
+        {!isVerified && (
+          <div style={warningBox}>This mentor is not verified yet.</div>
+        )}
+
+        {isVerified && remainingSlots <= 0 && (
+          <div style={warningBox}>
+            This mentor has reached their mentee capacity.
+          </div>
+        )}
+
         <div style={detailsGrid}>
           <section>
             <h3 style={sectionTitle}>Personal Details</h3>
             <div style={rowsWrap}>
-              {isStudent && (
-                <>
-                  <InfoRow label="Department" value={profile.department} />
-                  <InfoRow label="Batch" value={profile.batch} />
-                  <InfoRow label="Bio" value={profile.bio} multiline />
-                  <InfoRow label="Motivation" value={profile.motivation} multiline />
-                  <InfoRow label="Goal" value={profile.goal} multiline />
-                </>
-              )}
-
-              {isAlumni && (
-                <>
-                  <InfoRow label="Department" value={profile.department} />
-                  <InfoRow label="Graduation Year" value={profile.graduation_year} />
-                  <InfoRow label="Bio" value={profile.bio} multiline />
-                  <InfoRow
-                    label="Mentee Capacity"
-                    value={profile.preferred_mentee_capacity}
-                  />
-                </>
-              )}
+              <InfoRow label="Department" value={profile.department} />
+              <InfoRow label="Graduation Year" value={profile.graduation_year} />
+              <InfoRow label="Bio" value={profile.bio} multiline />
+              <InfoRow
+                label="Mentee Capacity"
+                value={profile.preferred_mentee_capacity}
+              />
             </div>
           </section>
 
           <section>
             <h3 style={sectionTitle}>Professional Details</h3>
             <div style={rowsWrap}>
-              {isStudent && (
-                <>
-                  <InfoRow label="Areas of Interest" value={profile.areas_of_interest} multiline />
-                  <InfoRow label="LinkedIn" value={profile.linkedin_url} isLink />
-                  <InfoRow label="GitHub" value={profile.github_url} isLink />
-                  <InfoRow label="Portfolio" value={profile.portfolio_url} isLink />
-                  <InfoRow label="CV" value={profile.cv_url} isLink />
-                </>
-              )}
-
-              {isAlumni && (
-                <>
-                  <InfoRow label="Job Title" value={profile.job_title} />
-                  <InfoRow label="Company" value={profile.organization} />
-                  <InfoRow
-                    label="Expertise / Interests"
-                    value={profile.primary_interests}
-                    multiline
-                  />
-                  <InfoRow label="LinkedIn URL" value={profile.linkedin_url} isLink />
-                </>
-              )}
+              <InfoRow label="Job Title" value={profile.job_title} />
+              <InfoRow label="Company" value={profile.organization} />
+              <InfoRow
+                label="Expertise / Interests"
+                value={profile.primary_interests}
+                multiline
+              />
+              <InfoRow label="LinkedIn URL" value={profile.linkedin_url} isLink />
             </div>
           </section>
+        </div>
+
+        {!token && (
+          <div style={{ marginTop: 22 }}>
+            <Link to="/login" style={directoryLink}>
+              Login to request mentorship
+            </Link>
+          </div>
+        )}
+
+        <div style={{ marginTop: 16 }}>
+          <Link to="/directory" style={directoryLink}>
+            ← Back to Directory
+          </Link>
         </div>
       </div>
     </PageShell>
@@ -324,18 +335,35 @@ const linkValue = {
   borderBottom: "1px solid rgba(17,17,17,0.14)",
 };
 
-const adminBtn = {
-  background: "rgba(255,255,255,0.7)",
+const requestBtn = {
+  background: "rgba(255, 255, 255, 0.7)",
   color: "#111111",
   padding: "10px 16px",
   borderRadius: 999,
-  textDecoration: "none",
+  border: "1px solid rgba(51, 207, 64, 0.06)",
+  cursor: "pointer",
+  fontSize: 14,
   fontWeight: 400,
-  border: "1px solid rgba(0,0,0,0.06)",
+  fontFamily: '"Google Sans", Arial, sans-serif',
+};
+
+const directoryLink = {
+  color: "#111111",
+  textDecoration: "none",
+  fontSize: 15,
+  borderBottom: "1px solid rgba(17,17,17,0.14)",
 };
 
 const errorBox = {
   background: "#fee2e2",
   padding: 12,
   borderRadius: 14,
+};
+
+const warningBox = {
+  background: "#fee6c7",
+  padding: 10,
+  borderRadius: 12,
+  marginBottom: 14,
+  color: "#ca240e",
 };
