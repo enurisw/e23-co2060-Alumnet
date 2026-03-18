@@ -1,4 +1,3 @@
-// src/pages/Register.jsx
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { registerUser } from "../api";
@@ -6,30 +5,43 @@ import AuthLayout from "../components/AuthLayout";
 import {
   titleStyle,
   subtitleStyle,
+  sectionTitleStyle,
   labelStyle,
   inputStyle,
   selectStyle,
+  textareaStyle,
   btnPrimaryStyle,
   footerRowStyle,
   linkStyle,
   errorBoxStyle,
+  dividerStyle,
   uiCss,
 } from "../styles/ui";
+
+const DEPARTMENTS = [
+  "Chemical & Process Engineering",
+  "Civil Engineering",
+  "Computer Engineering",
+  "Electrical and Electronic Engineering",
+  "Mechanical Engineering",
+  "Manufacturing and Industrial Engineering",
+];
 
 export default function Register() {
   const navigate = useNavigate();
 
   const [role, setRole] = useState("student");
 
-  // common
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // student fields
+  const [department, setDepartment] = useState("");
+
+  // student
   const [batch, setBatch] = useState("");
   const [interests, setInterests] = useState("");
-  const [aboutYourself, setAboutYourself] = useState("");
+  const [bio, setBio] = useState("");
   const [whyNeedMentor, setWhyNeedMentor] = useState("");
   const [goals, setGoals] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
@@ -37,10 +49,10 @@ export default function Register() {
   const [portfolioUrl, setPortfolioUrl] = useState("");
   const [cvUrl, setCvUrl] = useState("");
 
-  // alumni fields
+  // alumni
+  const [alumniBatch, setAlumniBatch] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [organization, setOrganization] = useState("");
-  const [gradYear, setGradYear] = useState("");
   const [prefCapacity, setPrefCapacity] = useState("");
 
   const [loading, setLoading] = useState(false);
@@ -52,16 +64,17 @@ export default function Register() {
       email,
       password,
       role,
+      department,
     };
 
     if (role === "student") {
       return {
         ...common,
         batch,
-        interests,
-        about_yourself: aboutYourself,
-        why_need_mentor: whyNeedMentor,
-        goals,
+        areas_of_interest: interests,
+        bio,
+        motivation: whyNeedMentor,
+        goal: goals,
         linkedin_url: linkedinUrl,
         github_url: githubUrl,
         portfolio_url: portfolioUrl,
@@ -72,29 +85,31 @@ export default function Register() {
     return {
       ...common,
       job_title: jobTitle,
-      company: organization,
-      grad_year: gradYear,
+      organization,
+      graduation_year: alumniBatch ? Number(alumniBatch) : null,
       linkedin_url: linkedinUrl,
-      interests,
+      primary_interests: interests,
       preferred_mentee_capacity: prefCapacity ? Number(prefCapacity) : null,
+      bio,
     };
   }, [
-    role,
     fullName,
     email,
     password,
+    role,
+    department,
     batch,
     interests,
-    aboutYourself,
+    bio,
     whyNeedMentor,
     goals,
     linkedinUrl,
     githubUrl,
     portfolioUrl,
     cvUrl,
+    alumniBatch,
     jobTitle,
     organization,
-    gradYear,
     prefCapacity,
   ]);
 
@@ -115,11 +130,11 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout maxWidth={720}>
+    <AuthLayout maxWidth={760}>
       <style>{uiCss}</style>
 
       <h1 style={titleStyle}>Create Account</h1>
-      <p style={subtitleStyle}>Join the AlumNet mentorship community.</p>
+      <p style={subtitleStyle}>Join the Alumnet mentorship community.</p>
 
       <form onSubmit={handleSubmit}>
         <div className="grid2">
@@ -152,7 +167,7 @@ export default function Register() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••••"
+              placeholder="••••••••••••"
               required
               style={inputStyle}
             />
@@ -171,11 +186,11 @@ export default function Register() {
           </div>
         </div>
 
-        <div style={{ height: 1, background: "rgba(11,42,111,0.12)", margin: "6px 0 14px" }} />
+        <div style={dividerStyle} />
 
         {role === "student" ? (
           <>
-            <h3 style={{ margin: "0 0 10px", color: "#0b2a6f" }}>Student Details</h3>
+            <h3 style={sectionTitleStyle}>Student Details</h3>
 
             <div className="grid2">
               <div>
@@ -183,12 +198,30 @@ export default function Register() {
                 <input
                   value={batch}
                   onChange={(e) => setBatch(e.target.value)}
-                  placeholder="e.g. E23"
+                  placeholder="E23"
                   required
                   style={inputStyle}
                 />
               </div>
+
               <div>
+                <label style={labelStyle}>Department *</label>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  required
+                  style={selectStyle}
+                >
+                  <option value="">Select department</option>
+                  {DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Areas of Interest</label>
                 <input
                   value={interests}
@@ -199,12 +232,12 @@ export default function Register() {
               </div>
             </div>
 
-            <label style={labelStyle}>About Yourself</label>
+            <label style={labelStyle}>Bio</label>
             <textarea
-              value={aboutYourself}
-              onChange={(e) => setAboutYourself(e.target.value)}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
               placeholder="Brief introduction..."
-              style={{ ...inputStyle, minHeight: 90 }}
+              style={textareaStyle}
             />
 
             <div className="grid2">
@@ -215,22 +248,23 @@ export default function Register() {
                   onChange={(e) => setWhyNeedMentor(e.target.value)}
                   placeholder="Explain your motivation..."
                   required
-                  style={{ ...inputStyle, minHeight: 90 }}
+                  style={textareaStyle}
                 />
               </div>
+
               <div>
                 <label style={labelStyle}>What is your goal? *</label>
                 <textarea
                   value={goals}
                   onChange={(e) => setGoals(e.target.value)}
-                  placeholder="Career/academic goals..."
+                  placeholder="Career or academic goals..."
                   required
-                  style={{ ...inputStyle, minHeight: 90 }}
+                  style={textareaStyle}
                 />
               </div>
             </div>
 
-            <h4 style={{ margin: "10px 0 6px", color: "#0b2a6f" }}>Links & Portfolio</h4>
+            <h4 style={sectionTitleStyle}>Links</h4>
 
             <div className="grid2">
               <div>
@@ -242,6 +276,7 @@ export default function Register() {
                   style={inputStyle}
                 />
               </div>
+
               <div>
                 <label style={labelStyle}>GitHub URL</label>
                 <input
@@ -251,8 +286,9 @@ export default function Register() {
                   style={inputStyle}
                 />
               </div>
+
               <div>
-                <label style={labelStyle}>Portfolio URL (Optional)</label>
+                <label style={labelStyle}>Portfolio URL</label>
                 <input
                   value={portfolioUrl}
                   onChange={(e) => setPortfolioUrl(e.target.value)}
@@ -260,8 +296,9 @@ export default function Register() {
                   style={inputStyle}
                 />
               </div>
+
               <div>
-                <label style={labelStyle}>CV Link (Google Drive)</label>
+                <label style={labelStyle}>CV Link</label>
                 <input
                   value={cvUrl}
                   onChange={(e) => setCvUrl(e.target.value)}
@@ -273,9 +310,37 @@ export default function Register() {
           </>
         ) : (
           <>
-            <h3 style={{ margin: "0 0 10px", color: "#0b2a6f" }}>Mentor Profile</h3>
+            <h3 style={sectionTitleStyle}>Mentor Profile</h3>
 
             <div className="grid2">
+              <div>
+                <label style={labelStyle}>Graduation Year (Batch)</label>
+                <input
+                  type="number"
+                  value={alumniBatch}
+                  onChange={(e) => setAlumniBatch(e.target.value)}
+                  placeholder="2012"
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Department *</label>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  required
+                  style={selectStyle}
+                >
+                  <option value="">Select department</option>
+                  {DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label style={labelStyle}>Job Title *</label>
                 <input
@@ -288,23 +353,34 @@ export default function Register() {
               </div>
 
               <div>
-                <label style={labelStyle}>Organization *</label>
+                <label style={labelStyle}>Company *</label>
                 <input
                   value={organization}
                   onChange={(e) => setOrganization(e.target.value)}
-                  placeholder="Rootcode"
+                  placeholder="Google"
                   required
                   style={inputStyle}
                 />
               </div>
 
-              <div>
-                <label style={labelStyle}>Graduation Year (Batch)</label>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Primary Interests / Expertise *</label>
                 <input
-                  value={gradYear}
-                  onChange={(e) => setGradYear(e.target.value)}
-                  placeholder="2012"
+                  value={interests}
+                  onChange={(e) => setInterests(e.target.value)}
+                  placeholder="AI, Cyber Security, Career Guidance"
+                  required
                   style={inputStyle}
+                />
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Bio</label>
+                <textarea
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Brief introduction..."
+                  style={textareaStyle}
                 />
               </div>
 
@@ -319,19 +395,8 @@ export default function Register() {
                 />
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Primary Interests / Expertise *</label>
-                <input
-                  value={interests}
-                  onChange={(e) => setInterests(e.target.value)}
-                  placeholder="AI, Cyber Security, Career Guidance (comma separated)"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Preferred Mentee Capacity (Slots)</label>
+              <div>
+                <label style={labelStyle}>Preferred Mentee Capacity</label>
                 <input
                   type="number"
                   value={prefCapacity}
@@ -353,7 +418,7 @@ export default function Register() {
           className="btnPrimary"
           style={{
             ...btnPrimaryStyle,
-            marginTop: 14,
+            marginTop: 16,
             opacity: loading ? 0.8 : 1,
             cursor: loading ? "not-allowed" : "pointer",
           }}
@@ -369,7 +434,7 @@ export default function Register() {
         </Link>
       </div>
 
-      <div style={{ textAlign: "center", marginTop: 10 }}>
+      <div style={{ textAlign: "center", marginTop: 12 }}>
         <Link className="link" style={linkStyle} to="/">
           ← Back to Home
         </Link>
