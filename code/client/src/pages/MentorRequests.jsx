@@ -1,46 +1,55 @@
 import { useEffect, useState } from "react";
 import PageShell from "../components/PageShell";
-import { getStudentRequests } from "../api";
+import { getMentorRequests, updateMentorshipRequest } from "../api";
 
-export default function StudentRequests() {
+export default function MentorRequests() {
   const token = localStorage.getItem("token");
 
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setErr("");
-        const data = await getStudentRequests(token);
-        setRequests(data);
-      } catch (e) {
-        setErr(e.message || "Failed to load requests");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      setErr("");
+      const data = await getMentorRequests(token);
+      setRequests(data);
+    } catch (e) {
+      setErr(e.message || "Failed to load requests");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    load();
+  useEffect(() => {
+    loadRequests();
   }, [token]);
 
+  const handleStatusUpdate = async (id, status) => {
+    try {
+      await updateMentorshipRequest(token, id, status);
+      await loadRequests();
+    } catch (e) {
+      setErr(e.message || "Failed to update request");
+    }
+  };
+
   return (
-    <PageShell title="My Requests" subtitle="Mentorship requests you have sent">
+    <PageShell title="My Requests" subtitle="Mentorship requests you have received">
       {err && <div style={errorBox}>{err}</div>}
 
       {loading ? (
         <div>Loading...</div>
       ) : requests.length === 0 ? (
-        <div>No requests sent yet.</div>
+        <div>No requests received yet.</div>
       ) : (
         <div style={grid}>
           {requests.map((request) => (
             <div key={request.id} style={card}>
-              <div style={title}>{request.alumni_full_name || "Mentor"}</div>
-              <div style={meta}>{request.alumni_job_title || "-"}</div>
-              <div style={meta}>{request.alumni_organization || "-"}</div>
+              <div style={title}>{request.student_full_name || "Student"}</div>
+              <div style={meta}>{request.student_department || "-"}</div>
+              <div style={meta}>{request.student_batch || "-"}</div>
 
               <div style={row}>
                 <div style={label}>Status</div>
@@ -60,6 +69,24 @@ export default function StudentRequests() {
                 <div style={messageLabel}>Message</div>
                 <div style={messageText}>{request.message || "-"}</div>
               </div>
+
+              {request.status === "pending" && (
+                <div style={buttonRow}>
+                  <button
+                    style={confirmButton}
+                    onClick={() => handleStatusUpdate(request.id, "accepted")}
+                  >
+                    Confirm
+                  </button>
+
+                  <button
+                    style={rejectButton}
+                    onClick={() => handleStatusUpdate(request.id, "rejected")}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -137,6 +164,34 @@ const messageText = {
   lineHeight: 1.7,
   color: "#111111",
   whiteSpace: "pre-wrap",
+};
+
+const buttonRow = {
+  display: "flex",
+  gap: 10,
+  marginTop: 16,
+};
+
+const confirmButton = {
+  padding: "9px 18px",
+  borderRadius: 999,
+  border: "1px solid rgba(0,0,0,0.12)",
+  background: "white",
+  color: "#16a34a",
+  cursor: "pointer",
+  fontSize: 14,
+  fontWeight: 500,
+};
+
+const rejectButton = {
+  padding: "9px 18px",
+  borderRadius: 999,
+  border: "1px solid rgba(0,0,0,0.12)",
+  background: "white",
+  color: "#b91c1c",
+  cursor: "pointer",
+  fontSize: 14,
+  fontWeight: 500,
 };
 
 const errorBox = {
