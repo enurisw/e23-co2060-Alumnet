@@ -7,13 +7,17 @@ const eventRoutes = require("./routes/eventRoutes");
 
 const app = express();
 
-app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://e23-co2060-alumnet.vercel.app/"
-  ],
+const corsOptions = {
+  origin: "https://e23-co2060-alumnet.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+
+// IMPORTANT for preflight requests
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
