@@ -6,16 +6,71 @@ const getMyConversations = async (req, res) => {
 
     const result = await pool.query(
       `
-      SELECT *
-      FROM conversations
-      WHERE student_user_id = $1
-         OR alumni_user_id = $1
-      ORDER BY created_at DESC
+      SELECT
+        c.id,
+        c.created_at,
+
+        CASE
+          WHEN c.student_user_id = $1
+          THEN alumni.id
+          ELSE student.id
+        END AS other_user_id,
+
+        CASE
+          WHEN c.student_user_id = $1
+          THEN alumni.full_name
+          ELSE student.full_name
+        END AS other_user_name,
+
+        CASE
+          WHEN c.student_user_id = $1
+          THEN alumni.avatar_url
+          ELSE student.avatar_url
+        END AS other_user_avatar,
+
+        (
+          SELECT m.message_text
+          FROM messages m
+          WHERE m.conversation_id = c.id
+          ORDER BY m.created_at DESC
+          LIMIT 1
+        ) AS last_message,
+
+        (
+          SELECT m.created_at
+          FROM messages m
+          WHERE m.conversation_id = c.id
+          ORDER BY m.created_at DESC
+          LIMIT 1
+        ) AS last_message_at
+
+      FROM conversations c
+
+      JOIN users student
+        ON student.id = c.student_user_id
+
+      JOIN users alumni
+        ON alumni.id = c.alumni_user_id
+
+      WHERE c.student_user_id = $1
+         OR c.alumni_user_id = $1
+
+      ORDER BY COALESCE(
+        (
+          SELECT m.created_at
+          FROM messages m
+          WHERE m.conversation_id = c.id
+          ORDER BY m.created_at DESC
+          LIMIT 1
+        ),
+        c.created_at
+      ) DESC
       `,
       [userId]
     );
 
     res.json(result.rows);
+
   } catch (error) {
     console.error("Get conversations error:", error);
 
